@@ -482,10 +482,14 @@ $('joinCode').addEventListener('keydown', (e) => {
   }
 });
 
-// Auto-join if URL has room parameter
+// Auto-join if URL has room parameter (wait for socket connection first)
 const urlRoom = new URLSearchParams(location.search).get('room');
 if (urlRoom) {
-  joinRoom(urlRoom);
+  if (socket.connected) {
+    joinRoom(urlRoom);
+  } else {
+    socket.on('connect', () => joinRoom(urlRoom));
+  }
 }
 
 // ==================== SPEAKER ====================
