@@ -44,6 +44,9 @@ async function translateText(text, fromLang, toLang) {
   return data.choices[0].message.content.trim();
 }
 
+// Health check
+app.get('/health', (req, res) => res.json({ status: 'ok' }));
+
 // Serve static files
 app.use(express.static(join(__dirname, 'public')));
 
