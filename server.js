@@ -9,7 +9,10 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const app = express();
 const server = createServer(app);
-const io = new Server(server);
+const io = new Server(server, {
+  transports: ['websocket', 'polling'],
+  allowUpgrades: true
+});
 
 // Translate using OpenAI API directly via fetch (no SDK dependency at startup)
 async function translateText(text, fromLang, toLang) {
@@ -58,7 +61,7 @@ function generateRoomId() {
 }
 
 io.on('connection', (socket) => {
-  console.log(`Connected: ${socket.id}`);
+  console.log(`Connected: ${socket.id} | transport: ${socket.conn.transport.name} | Active rooms: ${[...rooms.keys()].join(', ') || 'none'}`);
 
   socket.on('create-room', ({ sourceLang, targetLang }, callback) => {
     const roomId = generateRoomId();

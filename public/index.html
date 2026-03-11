@@ -453,7 +453,7 @@ const LANGUAGES = [
 ];
 
 const $ = id => document.getElementById(id);
-const socket = io();
+const socket = io({ transports: ['websocket'] });
 
 // ==================== LANDING ====================
 const landingPage = $('landingPage');
