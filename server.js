@@ -12,7 +12,14 @@ const app = express();
 const server = createServer(app);
 const io = new Server(server);
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+let openai;
+function getOpenAI() {
+  if (!openai) {
+    console.log('OPENAI_API_KEY present:', !!process.env.OPENAI_API_KEY);
+    openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  }
+  return openai;
+}
 
 // Serve static files
 app.use(express.static(join(__dirname, 'public')));
@@ -85,7 +92,7 @@ io.on('connection', (socket) => {
     if (!room || room.speaker !== socket.id) return;
 
     try {
-      const response = await openai.chat.completions.create({
+      const response = await getOpenAI().chat.completions.create({
         model: 'gpt-4o-mini',
         temperature: 0.3,
         messages: [{
