@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Speech Translator - Live</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #0f172a;
+    color: #e2e8f0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px;
+  }
+
+  h1 {
+    font-size: 1.8rem;
+    margin-bottom: 4px;
+    background: linear-gradient(135deg, #60a5fa, #a78bfa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .subtitle { color: #64748b; margin-bottom: 24px; font-size: 0.9rem; }
+
+  .container {
+    width: 100%;
+    max-width: 700px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    flex: 1;
+  }
+
+  .card {
+    background: #1e293b;
+    border-radius: 16px;
+    padding: 20px;
+  }
+
+  .config-row {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+
+  .config-row:last-child { margin-bottom: 0; }
+
+  label {
+    font-size: 0.85rem;
+    color: #94a3b8;
+    min-width: 50px;
+  }
+
+  select {
+    background: #0f172a;
+    border: 1px solid #334155;
+    color: #e2e8f0;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    flex: 1;
+    min-width: 0;
+  }
+
+  select:focus { outline: none; border-color: #60a5fa; }
+
+  .swap-btn {
+    background: #334155;
+    border: none;
+    color: #94a3b8;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 6px 10px;
+    border-radius: 8px;
+    transition: all 0.2s;
+  }
+
+  .swap-btn:hover { background: #475569; color: #e2e8f0; }
+
+  /* Landing page */
+  .landing {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    padding: 40px 0;
+  }
+
+  .landing-desc {
+    text-align: center;
+    color: #94a3b8;
+    font-size: 0.95rem;
+    max-width: 400px;
+    line-height: 1.5;
+  }
+
+  .role-buttons {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .role-btn {
+    padding: 20px 32px;
+    border-radius: 16px;
+    border: 2px solid #334155;
+    background: #1e293b;
+    color: #e2e8f0;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-align: center;
+    min-width: 200px;
+  }
+
+  .role-btn:hover {
+    border-color: #60a5fa;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(96, 165, 250, 0.15);
+  }
+
+  .role-btn .icon { font-size: 2rem; display: block; margin-bottom: 8px; }
+  .role-btn .label { font-weight: 600; }
+  .role-btn .desc { font-size: 0.8rem; color: #64748b; margin-top: 4px; }
+
+  /* Join room input */
+  .join-section {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .join-section.visible { display: flex; }
+
+  .join-input {
+    background: #0f172a;
+    border: 2px solid #334155;
+    color: #e2e8f0;
+    padding: 12px 16px;
+    border-radius: 12px;
+    font-size: 1.2rem;
+    text-align: center;
+    width: 200px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+  }
+
+  .join-input:focus { outline: none; border-color: #60a5fa; }
+
+  .join-btn {
+    padding: 10px 24px;
+    border-radius: 10px;
+    border: none;
+    background: #1d4ed8;
+    color: white;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .join-btn:hover { background: #2563eb; }
+
+  /* Speaker UI */
+  .speaker-ui, .listener-ui { display: none; }
+  .speaker-ui.visible, .listener-ui.visible { display: flex; flex-direction: column; gap: 16px; flex: 1; }
+
+  .room-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .room-code {
+    background: #0f172a;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-family: monospace;
+    font-size: 1.2rem;
+    letter-spacing: 3px;
+    color: #60a5fa;
+    font-weight: 700;
+  }
+
+  .copy-btn {
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: 1px solid #334155;
+    background: transparent;
+    color: #94a3b8;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.2s;
+  }
+
+  .copy-btn:hover { background: #334155; color: #e2e8f0; }
+  .copy-btn.copied { border-color: #22c55e; color: #22c55e; }
+
+  .listener-badge {
+    margin-left: auto;
+    background: #1d4ed8;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    color: #e2e8f0;
+  }
+
+  .mic-btn {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    border: none;
+    background: #1d4ed8;
+    color: white;
+    font-size: 2rem;
+    cursor: pointer;
+    align-self: center;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .mic-btn:hover { background: #2563eb; transform: scale(1.05); }
+
+  .mic-btn.active {
+    background: #dc2626;
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4); }
+    50% { box-shadow: 0 0 0 20px rgba(220, 38, 38, 0); }
+  }
+
+  .status {
+    text-align: center;
+    font-size: 0.85rem;
+    color: #64748b;
+    min-height: 20px;
+  }
+
+  .status.listening { color: #22c55e; }
+  .status.translating { color: #f59e0b; }
+  .status.speaking { color: #a78bfa; }
+  .status.connected { color: #22c55e; }
+  .status.error { color: #ef4444; }
+
+  .transcript-area {
+    background: #1e293b;
+    border-radius: 16px;
+    padding: 20px;
+    flex: 1;
+    min-height: 200px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .entry { padding-bottom: 12px; border-bottom: 1px solid #293548; }
+  .entry:last-child { border-bottom: none; }
+
+  .original {
+    font-size: 0.85rem;
+    color: #64748b;
+    margin-bottom: 4px;
+  }
+
+  .translated {
+    font-size: 1.1rem;
+    color: #e2e8f0;
+    font-weight: 500;
+  }
+
+  .interim {
+    font-style: italic;
+    color: #475569;
+    font-size: 0.9rem;
+  }
+
+  .error-msg {
+    background: #7f1d1d;
+    color: #fca5a5;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    display: none;
+  }
+
+  .error-msg.visible { display: block; }
+
+  .speed-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: center;
+  }
+
+  .speed-row input[type="range"] {
+    width: 100px;
+    accent-color: #3b82f6;
+  }
+
+  .speed-row span {
+    font-size: 0.8rem;
+    color: #64748b;
+    min-width: 30px;
+  }
+
+  .lang-display {
+    text-align: center;
+    font-size: 1rem;
+    color: #94a3b8;
+  }
+
+  .lang-display strong {
+    color: #60a5fa;
+  }
+
+  .disconnected-banner {
+    background: #7f1d1d;
+    color: #fca5a5;
+    padding: 16px;
+    border-radius: 12px;
+    text-align: center;
+    font-size: 0.95rem;
+    display: none;
+  }
+
+  .disconnected-banner.visible { display: block; }
+</style>
+</head>
+<body>
+
+<h1>Speech Translator</h1>
+<p class="subtitle">Traduzione vocale in tempo reale</p>
+
+<div class="container">
+  <!-- Landing Page -->
+  <div id="landingPage" class="landing">
+    <p class="landing-desc">
+      Parla nella tua lingua e chi si collega sentira la traduzione in tempo reale.
+    </p>
+    <div class="role-buttons">
+      <button class="role-btn" id="btnSpeaker">
+        <span class="icon">🎤</span>
+        <span class="label">Speaker</span>
+        <span class="desc">Parla e traduci</span>
+      </button>
+      <button class="role-btn" id="btnListener">
+        <span class="icon">🔊</span>
+        <span class="label">Listener</span>
+        <span class="desc">Ascolta la traduzione</span>
+      </button>
+    </div>
+
+    <div class="join-section" id="joinSection">
+      <p style="color: #94a3b8; font-size: 0.9rem;">Inserisci il codice stanza:</p>
+      <input class="join-input" id="joinCode" maxlength="6" placeholder="abc123" />
+      <button class="join-btn" id="joinBtn">Entra</button>
+    </div>
+  </div>
+
+  <!-- Speaker UI -->
+  <div class="speaker-ui" id="speakerUI">
+    <div class="card">
+      <div class="config-row">
+        <label>Da</label>
+        <select id="sourceLang"></select>
+        <button class="swap-btn" id="swapBtn" title="Scambia lingue">⇄</button>
+        <label>A</label>
+        <select id="targetLang"></select>
+      </div>
+      <div class="config-row">
+        <label>Stanza</label>
+        <div class="room-info">
+          <span class="room-code" id="roomCode">---</span>
+          <button class="copy-btn" id="copyBtn">Copia link</button>
+          <span class="listener-badge" id="listenerBadge">0 listener</span>
+        </div>
+      </div>
+    </div>
+
+    <button class="mic-btn" id="micBtn">🎤</button>
+    <div class="status" id="speakerStatus">Crea la stanza...</div>
+    <div class="error-msg" id="speakerError"></div>
+
+    <div class="transcript-area" id="speakerTranscript">
+      <div class="interim" id="interimText"></div>
+    </div>
+  </div>
+
+  <!-- Listener UI -->
+  <div class="listener-ui" id="listenerUI">
+    <div class="card">
+      <div class="lang-display" id="langDisplay">
+        Connessione in corso...
+      </div>
+    </div>
+
+    <div class="speed-row">
+      <label style="min-width:auto; font-size:0.85rem; color:#94a3b8;">Velocita voce</label>
+      <input type="range" id="speechRate" min="0.5" max="2" step="0.1" value="1" />
+      <span id="rateValue">1x</span>
+    </div>
+
+    <div class="status" id="listenerStatus">Connessione...</div>
+    <div class="disconnected-banner" id="disconnectedBanner">
+      Lo speaker si e disconnesso. La sessione e terminata.
+    </div>
+    <div class="error-msg" id="listenerError"></div>
+
+    <div class="transcript-area" id="listenerTranscript">
+      <div class="interim" id="listenerInterim"></div>
+    </div>
+  </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const LANGUAGES = [
+  { code: 'it-IT', name: 'Italiano', short: 'it', ttsLang: 'it-IT' },
+  { code: 'en-US', name: 'English', short: 'en', ttsLang: 'en-US' },
+  { code: 'es-ES', name: 'Español', short: 'es', ttsLang: 'es-ES' },
+  { code: 'fr-FR', name: 'Français', short: 'fr', ttsLang: 'fr-FR' },
+  { code: 'de-DE', name: 'Deutsch', short: 'de', ttsLang: 'de-DE' },
+  { code: 'pt-BR', name: 'Português', short: 'pt', ttsLang: 'pt-BR' },
+  { code: 'ru-RU', name: 'Русский', short: 'ru', ttsLang: 'ru-RU' },
+  { code: 'zh-CN', name: '中文', short: 'zh', ttsLang: 'zh-CN' },
+  { code: 'ja-JP', name: '日本語', short: 'ja', ttsLang: 'ja-JP' },
+  { code: 'ko-KR', name: '한국어', short: 'ko', ttsLang: 'ko-KR' },
+  { code: 'ar-SA', name: 'العربية', short: 'ar', ttsLang: 'ar-SA' },
+  { code: 'hi-IN', name: 'हिन्दी', short: 'hi', ttsLang: 'hi-IN' },
+  { code: 'nl-NL', name: 'Nederlands', short: 'nl', ttsLang: 'nl-NL' },
+  { code: 'pl-PL', name: 'Polski', short: 'pl', ttsLang: 'pl-PL' },
+  { code: 'sv-SE', name: 'Svenska', short: 'sv', ttsLang: 'sv-SE' },
+  { code: 'tr-TR', name: 'Türkçe', short: 'tr', ttsLang: 'tr-TR' },
+  { code: 'uk-UA', name: 'Українська', short: 'uk', ttsLang: 'uk-UA' },
+  { code: 'ro-RO', name: 'Română', short: 'ro', ttsLang: 'ro-RO' },
+  { code: 'el-GR', name: 'Ελληνικά', short: 'el', ttsLang: 'el-GR' },
+  { code: 'th-TH', name: 'ไทย', short: 'th', ttsLang: 'th-TH' },
+];
+
+const $ = id => document.getElementById(id);
+const socket = io();
+
+// ==================== LANDING ====================
+const landingPage = $('landingPage');
+const joinSection = $('joinSection');
+
+$('btnSpeaker').addEventListener('click', initSpeaker);
+$('btnListener').addEventListener('click', () => {
+  // Check if room code is in URL
+  const urlRoom = new URLSearchParams(location.search).get('room');
+  if (urlRoom) {
+    joinRoom(urlRoom);
+  } else {
+    joinSection.classList.add('visible');
+  }
+});
+
+$('joinBtn').addEventListener('click', () => {
+  const code = $('joinCode').value.trim();
+  if (code) joinRoom(code);
+});
+
+$('joinCode').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    const code = $('joinCode').value.trim();
+    if (code) joinRoom(code);
+  }
+});
+
+// Auto-join if URL has room parameter
+const urlRoom = new URLSearchParams(location.search).get('room');
+if (urlRoom) {
+  joinRoom(urlRoom);
+}
+
+// ==================== SPEAKER ====================
+let recognition = null;
+let isListening = false;
+
+function initSpeaker() {
+  landingPage.style.display = 'none';
+  $('speakerUI').classList.add('visible');
+
+  // Populate language dropdowns
+  const sourceLang = $('sourceLang');
+  const targetLang = $('targetLang');
+
+  LANGUAGES.forEach((lang, i) => {
+    sourceLang.add(new Option(lang.name, i));
+    targetLang.add(new Option(lang.name, i));
+  });
+  sourceLang.value = '0'; // Italiano
+  targetLang.value = '1'; // English
+
+  // Create room
+  socket.emit('create-room', {
+    sourceLang: LANGUAGES[0].name,
+    targetLang: LANGUAGES[1].name
+  }, ({ roomId }) => {
+    $('roomCode').textContent = roomId;
+    setStatus('speakerStatus', 'Premi il microfono per iniziare');
+  });
+
+  // Language changes
+  sourceLang.addEventListener('change', updateLangs);
+  targetLang.addEventListener('change', updateLangs);
+
+  $('swapBtn').addEventListener('click', () => {
+    const tmp = sourceLang.value;
+    sourceLang.value = targetLang.value;
+    targetLang.value = tmp;
+    updateLangs();
+    if (isListening) restartRecognition();
+  });
+
+  function updateLangs() {
+    socket.emit('update-languages', {
+      sourceLang: LANGUAGES[sourceLang.value].name,
+      targetLang: LANGUAGES[targetLang.value].name
+    });
+  }
+
+  // Copy link
+  $('copyBtn').addEventListener('click', () => {
+    const roomId = $('roomCode').textContent;
+    const link = `${location.origin}?room=${roomId}`;
+    navigator.clipboard.writeText(link).then(() => {
+      $('copyBtn').textContent = 'Copiato!';
+      $('copyBtn').classList.add('copied');
+      setTimeout(() => {
+        $('copyBtn').textContent = 'Copia link';
+        $('copyBtn').classList.remove('copied');
+      }, 2000);
+    });
+  });
+
+  // Listener count
+  socket.on('listener-count', (count) => {
+    $('listenerBadge').textContent = count + ' listener' + (count !== 1 ? '' : '');
+  });
+
+  // Mic button
+  $('micBtn').addEventListener('click', () => {
+    if (isListening) stopListening();
+    else startListening();
+  });
+}
+
+function startListening() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    showError('speakerError', 'Browser non supportato. Usa Chrome o Edge.');
+    return;
+  }
+
+  recognition = new SpeechRecognition();
+  recognition.continuous = true;
+  recognition.interimResults = true;
+  recognition.lang = LANGUAGES[$('sourceLang').value].code;
+
+  recognition.onresult = async (e) => {
+    let interim = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const result = e.results[i];
+      if (result.isFinal) {
+        const text = result[0].transcript.trim();
+        if (!text) continue;
+
+        $('interimText').textContent = '';
+        setStatus('speakerStatus', 'Traducendo...', 'translating');
+
+        socket.emit('translate', { text }, ({ translated, error }) => {
+          if (error) {
+            showError('speakerError', error);
+            if (isListening) setStatus('speakerStatus', 'In ascolto...', 'listening');
+            return;
+          }
+          addEntry('speakerTranscript', text, translated);
+          if (isListening) setStatus('speakerStatus', 'In ascolto...', 'listening');
+        });
+      } else {
+        interim += result[0].transcript;
+      }
+    }
+    if (interim) {
+      $('interimText').textContent = interim;
+      socket.emit('interim', interim);
+      $('speakerTranscript').scrollTop = $('speakerTranscript').scrollHeight;
+    }
+  };
+
+  recognition.onerror = (e) => {
+    if (e.error === 'not-allowed') {
+      showError('speakerError', 'Permesso microfono negato.');
+      stopListening();
+    } else if (e.error !== 'no-speech' && e.error !== 'aborted') {
+      showError('speakerError', 'Errore: ' + e.error);
+    }
+  };
+
+  recognition.onend = () => {
+    if (isListening) {
+      try { recognition.start(); } catch(e) {}
+    }
+  };
+
+  recognition.start();
+  isListening = true;
+  $('micBtn').classList.add('active');
+  setStatus('speakerStatus', 'In ascolto...', 'listening');
+}
+
+function stopListening() {
+  isListening = false;
+  if (recognition) {
+    recognition.stop();
+    recognition = null;
+  }
+  $('micBtn').classList.remove('active');
+  $('interimText').textContent = '';
+  setStatus('speakerStatus', 'Premi il microfono per iniziare');
+}
+
+function restartRecognition() {
+  if (recognition) {
+    recognition.stop();
+    recognition = null;
+  }
+  setTimeout(() => {
+    if (isListening) startListening();
+  }, 100);
+}
+
+// ==================== LISTENER ====================
+let listenerTargetLang = null;
+
+function joinRoom(roomId) {
+  landingPage.style.display = 'none';
+  $('listenerUI').classList.add('visible');
+
+  // Remove room from URL display cleanly
+  history.replaceState(null, '', `?room=${roomId}`);
+
+  socket.emit('join-room', roomId, ({ error, sourceLang, targetLang }) => {
+    if (error) {
+      setStatus('listenerStatus', error, 'error');
+      return;
+    }
+
+    const srcLang = LANGUAGES.find(l => l.name === sourceLang) || LANGUAGES[0];
+    const tgtLang = LANGUAGES.find(l => l.name === targetLang) || LANGUAGES[1];
+    listenerTargetLang = tgtLang;
+
+    $('langDisplay').innerHTML = `<strong>${sourceLang}</strong> → <strong>${targetLang}</strong>`;
+    setStatus('listenerStatus', 'Connesso. In attesa dello speaker...', 'connected');
+  });
+
+  // Receive translations
+  socket.on('translation', ({ original, translated }) => {
+    addEntry('listenerTranscript', original, translated);
+    speakText(translated);
+    setStatus('listenerStatus', 'Connesso', 'connected');
+  });
+
+  // Receive interim text
+  socket.on('interim', (text) => {
+    $('listenerInterim').textContent = text;
+    $('listenerTranscript').scrollTop = $('listenerTranscript').scrollHeight;
+  });
+
+  // Language update
+  socket.on('languages-updated', ({ sourceLang, targetLang }) => {
+    const tgtLang = LANGUAGES.find(l => l.name === targetLang) || LANGUAGES[1];
+    listenerTargetLang = tgtLang;
+    $('langDisplay').innerHTML = `<strong>${sourceLang}</strong> → <strong>${targetLang}</strong>`;
+  });
+
+  // Speaker disconnected
+  socket.on('speaker-left', () => {
+    $('disconnectedBanner').classList.add('visible');
+    setStatus('listenerStatus', 'Speaker disconnesso', 'error');
+  });
+}
+
+// Speech rate
+$('speechRate').addEventListener('input', () => {
+  $('rateValue').textContent = $('speechRate').value + 'x';
+});
+
+function speakText(text) {
+  if (!listenerTargetLang) return;
+
+  speechSynthesis.cancel();
+
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = listenerTargetLang.ttsLang;
+  utterance.rate = parseFloat($('speechRate').value);
+
+  const voices = speechSynthesis.getVoices();
+  const langPrefix = listenerTargetLang.ttsLang.split('-')[0];
+  const voice = voices.find(v => v.lang.startsWith(langPrefix));
+  if (voice) utterance.voice = voice;
+
+  speechSynthesis.speak(utterance);
+}
+
+// ==================== UTILS ====================
+function setStatus(id, text, cls) {
+  const el = $(id);
+  el.textContent = text;
+  el.className = 'status' + (cls ? ' ' + cls : '');
+}
+
+function showError(id, msg) {
+  const el = $(id);
+  el.textContent = msg;
+  el.classList.add('visible');
+  setTimeout(() => el.classList.remove('visible'), 5000);
+}
+
+function addEntry(containerId, original, translated) {
+  const container = $(containerId);
+  const interimEl = container.querySelector('.interim');
+  const div = document.createElement('div');
+  div.className = 'entry';
+  div.innerHTML = `<div class="original">${escapeHtml(original)}</div><div class="translated">${escapeHtml(translated)}</div>`;
+  container.insertBefore(div, interimEl);
+  container.scrollTop = container.scrollHeight;
+}
+
+function escapeHtml(str) {
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+// Preload voices
+speechSynthesis.getVoices();
+speechSynthesis.onvoiceschanged = () => speechSynthesis.getVoices();
+</script>
+</body>
+</html>

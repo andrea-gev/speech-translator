@@ -1,0 +1,16 @@
+{
+  "name": "speech-translator",
+  "version": "1.0.0",
+  "description": "Real-time speech translator with WebSocket relay",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --env-file=.env server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "openai": "^4.73.0",
+    "socket.io": "^4.8.0"
+  }
+}
